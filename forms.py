@@ -1,111 +1,145 @@
+import openai
 import streamlit as st
-import requests
-import base64
+import os
 import json
+import uuid
+import requests
+from dotenv import load_dotenv
 
-def main():
-    st.title("Formulário de Cadastro - Campanha Turtle")
+# Carregar variáveis do arquivo .env
+load_dotenv()
 
-    # Apresentação
-    st.markdown(
-        """
-        A Turtle é um protocolo de distribuição Web3 que ajuda a monetizar as atividades dos usuários, trazendo recompensas de fora para dentro. Em outras palavras, a Turtle quer facilitar a obtenção de recompensas enquanto você farma algum airdrop. 🐢  
+# Configurar a chave da API OpenAI
+openai.api_key = os.getenv("OPENAI_API_KEY")
+if not openai.api_key:
+    st.error("Chave da API OpenAI não encontrada. Configure no arquivo .env.")
+    st.stop()
 
-        Uma analogia simples para entender a Turtle é imaginar um programa de fidelidade de um supermercado. Normalmente, você acumula pontos comprando produtos e depois troca esses pontos por recompensas. Da mesma forma, a Turtle transforma suas interações e atividades em recompensas reais! 💎
+# Configurar o token do GitHub e o repositório
+github_token = os.getenv("GITHUB_TOKEN")
+github_repo = "seu-usuario/IA-ParaBuilders"  # Substitua pelo seu repositório
+if not github_token:
+    st.error("Token do GitHub não encontrado. Configure no arquivo .env.")
+    st.stop()
 
-        ### **Detalhes da Campanha**
-        - **Início:** 15/01 às 20h
-        - **Encerramento:** 22/01 às 22h
-        - **Premiação Total:** $150
+# Gera um ID único para cada sessão
+if "session_id" not in st.session_state:
+    st.session_state["session_id"] = str(uuid.uuid4())
+    st.session_state["historico"] = []
 
-        Participe e aproveite essa oportunidade de fazer parte da revolução Turtle! 🌟
-        """
-    )
+session_id = st.session_state["session_id"]
+historico_path = f"sessions/{session_id}.json"
+feedback_path = f"feedbacks/{session_id}.json"
 
-    # Perguntas do formulário
-    st.header("Informações de Cadastro")
-
-    # Twitter
-    twitter_handle = st.text_input("Twitter:", placeholder="Ex: @dollarinveste")
-    twitter_followers = st.text_input("Quantos seguidores você tem no Twitter?", placeholder="Digite o número de seguidores")
-
-    # Discord
-    discord_handle = st.text_input("Discord:", placeholder="Ex: dollarinveste")
-    is_turtle_member = st.radio(
-        "Já participa do Discord da Turtle?",
-        options=["Sim", "Não"],
-    )
-
-    creator_role = None
-    if is_turtle_member == "Sim":
-        creator_role = st.radio(
-            "Você já possui cargo de creator na Turtle?",
-            options=["Sim, Creator Oficial", "Ainda não"],
-        )
-
-    # Consentimento para compartilhar informações
-    consent = st.radio(
-        "Você concorda em compartilhar essas informações conosco?",
-        options=["Sim", "Não"],
-    )
-
-    # Botão de Envio
-    if st.button("Enviar"):
-        if consent == "Sim":
-            data = {
-                "Twitter": twitter_handle,
-                "Seguidores no Twitter": twitter_followers,
-                "Discord": discord_handle,
-                "Participa do Discord da Turtle": is_turtle_member,
-                "Cargo na Turtle": creator_role if is_turtle_member == "Sim" else "N/A",
-            }
-            upload_to_github(data)
-            st.success("Obrigado por enviar suas informações! Entraremos em contato em breve.")
-        else:
-            st.warning("Você precisa concordar em compartilhar as informações para enviar o formulário.")
-
-def upload_to_github(data):
-    # Configurações do GitHub
-    repo = "pydoug/parabuilders-turtle"
-    token = st.secrets["GH_TOKEN"]
-    path = "dados/formulario.json"
-
-    # URL do arquivo no repositório
-    url = f"https://api.github.com/repos/{repo}/contents/{path}"
-    headers = {"Authorization": f"token {token}"}
-
-    # Obter conteúdo existente
+# Função para salvar arquivos JSON no GitHub
+def salvar_no_github(file_path, data, commit_message):
+    """
+    Salva um arquivo JSON no repositório do GitHub.
+    """
+    url = f"https://api.github.com/repos/{github_repo}/contents/{file_path}"
+    headers = {"Authorization": f"token {github_token}"}
+    
+    # Verificar se o arquivo já existe no GitHub
     response = requests.get(url, headers=headers)
-
     if response.status_code == 200:
-        # Arquivo existe, atualizando
-        file_info = response.json()
-        sha = file_info["sha"]
-        content = json.loads(base64.b64decode(file_info["content"].encode()).decode())
-        content.append(data)
-    elif response.status_code == 404:
-        # Arquivo não existe, criando novo
+        sha = response.json().get("sha")  # SHA do arquivo existente
+    else:
         sha = None
-        content = [data]
-    else:
-        # Erro inesperado
-        st.error(f"Erro ao acessar o repositório: {response.status_code} - {response.json().get('message', 'Erro desconhecido')}")
-        return
 
-    # Preparar o payload para upload
+    # Codificar os dados em base64
+    content = json.dumps(data, ensure_ascii=False, indent=4).encode("utf-8")
     payload = {
-        "message": "Atualização do formulário",
-        "content": base64.b64encode(json.dumps(content, indent=4).encode()).decode(),
-        "sha": sha,
+        "message": commit_message,
+        "content": content.decode("utf-8"),
     }
+    if sha:
+        payload["sha"] = sha
 
-    # Enviar atualização ao GitHub
+    # Enviar para o GitHub
     response = requests.put(url, headers=headers, json=payload)
-
     if response.status_code in [200, 201]:
-        st.info("Dados enviados com sucesso!")
+        st.success(f"Arquivo {file_path} salvo no GitHub.")
     else:
-        st.error(f"Erro ao enviar dados ao GitHub: {response.status_code} - {response.json().get('message', 'Erro desconhecido')}")
+        st.error(f"Erro ao salvar {file_path}: {response.json()}")
 
-if __name__ == "__main__":
-    main()
+# Contexto da ParaBuilders e Codorna
+contexto = """
+Você é uma IA da ParaBuilders, uma comunidade Web3 dedicada a criadores de conteúdo, moderadores, community managers e outros profissionais do ecossistema Web3. 
+Sua personalidade reflete a cultura da ParaBuilders e das codornas:
+- Engraçada e acolhedora, com toques de sarcasmo inteligente.
+- Sempre focada em apoiar, ensinar e promover o lema "Codorna ajuda Codorna".
+- Inspira e motiva os membros a se destacarem no mercado Web3.
+
+Sobre a ParaBuilders:
+A ParaBuilders é uma comunidade focada na profissionalização da Web3, promovendo workshops, mentorias e networking para criadores de conteúdo e outros profissionais. 
+Ela conecta talentos brasileiros com grandes empresas internacionais, oferecendo treinamento gratuito e oportunidades exclusivas. 
+Os membros que se destacam tornam-se "Creators Oficiais", com acesso a aulas avançadas, certificados, e cargos especiais na comunidade.
+
+Valores:
+- "Codorna ajuda Codorna": União, companheirismo e prosperidade.
+- Foco no aprendizado e compartilhamento de conhecimento.
+- Criar um ecossistema sustentável e de alta qualidade no mercado Web3.
+
+Missão:
+- Capacitar criadores de conteúdo e outros profissionais a conquistar seu espaço na Web3.
+- Tornar o Brasil um destaque global no mercado cripto e blockchain.
+
+Use esse contexto para responder a perguntas, corrigir textos, ensinar conceitos ou motivar a comunidade. 
+Mantenha o tom engraçado, acolhedor e criativo, mas sem perder o foco nos objetivos da ParaBuilders.
+"""
+
+# Função para interagir com a IA
+def interagir_com_ia(mensagem_usuario):
+    """
+    Envia uma mensagem para a IA com o contexto configurado.
+    """
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": contexto},
+            {"role": "user", "content": mensagem_usuario},
+        ]
+    )
+
+    # Retorna a resposta gerada pela IA
+    return response["choices"][0]["message"]["content"].strip()
+
+
+# Aplicação Streamlit
+st.title("Chatbot ParaBuilders 🏗️ 🐤")
+st.write("Converse com a IA da ParaBuilders e aprenda mais sobre o mundo Web3 e a cultura das codornas!")
+
+# Caixa de entrada do usuário
+mensagem_usuario = st.text_input("Digite sua mensagem aqui:")
+
+# Quando o usuário enviar uma mensagem
+if st.button("Enviar"):
+    if mensagem_usuario:
+        # Adicionar a mensagem do usuário ao histórico
+        st.session_state["historico"].append({"role": "user", "content": mensagem_usuario})
+
+        # Obter resposta da IA
+        resposta_ia = interagir_com_ia(mensagem_usuario)
+
+        # Adicionar a resposta da IA ao histórico
+        st.session_state["historico"].append({"role": "assistant", "content": resposta_ia})
+
+        # Salvar histórico no GitHub
+        salvar_no_github(historico_path, st.session_state["historico"], "Atualizar histórico de conversa")
+
+# Mostrar o histórico de conversas
+st.write("### Conversa:")
+for mensagem in st.session_state["historico"]:
+    if mensagem["role"] == "user":
+        st.markdown(f"**Você:** {mensagem['content']}")
+    else:
+        st.markdown(f"**IA:** {mensagem['content']}")
+
+# Caixa de feedback
+st.write("### Feedback:")
+feedback_text = st.text_area("Deixe seu feedback aqui:")
+
+if st.button("Enviar Feedback"):
+    if feedback_text.strip():
+        salvar_no_github(feedback_path, {"session_id": session_id, "feedback": feedback_text.strip()}, "Adicionar feedback")
+        st.success("Obrigado pelo feedback!")
