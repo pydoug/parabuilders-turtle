@@ -66,7 +66,7 @@ def main():
 
 def upload_to_github(data):
     # Configurações do GitHub
-    repo = "pydoug/turtle-campaign"
+    repo = "pydoug/parabuilders-turtle"
     token = "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"
     path = "dados/formulario.json"
 
