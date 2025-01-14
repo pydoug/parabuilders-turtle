@@ -103,7 +103,7 @@ def upload_to_github(data):
     response = requests.put(url, headers=headers, json=payload)
 
     if response.status_code in [200, 201]:
-        st.info("Dados enviados com sucesso ao GitHub!")
+        st.info("Dados enviados com sucesso!")
     else:
         st.error(f"Erro ao enviar dados ao GitHub: {response.status_code} - {response.json().get('message', 'Erro desconhecido')}")
 
