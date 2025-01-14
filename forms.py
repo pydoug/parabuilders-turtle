@@ -30,7 +30,7 @@ def main():
     twitter_followers = st.text_input("Quantos seguidores você tem no Twitter?", placeholder="Digite o número de seguidores")
 
     # Discord
-    discord_handle = st.text_input("Discord:", placeholder="Ex: @dollarinveste")
+    discord_handle = st.text_input("Discord:", placeholder="Ex: dollarinveste")
     is_turtle_member = st.radio(
         "Já participa do Discord da Turtle?",
         options=["Sim", "Não"],
