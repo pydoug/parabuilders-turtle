@@ -42,7 +42,7 @@ def salvar_no_github(file_path, data, commit_message):
     # Enviar o arquivo para o GitHub
     response = requests.put(url, headers=headers, json=payload)
     if response.status_code in [200, 201]:
-        st.success(f"Arquivo {file_path} salvo com sucesso no GitHub!")
+        st.success(f"Arquivo {file_path} salvo com sucesso!")
     else:
         st.error(f"Erro ao salvar {file_path}: {response.json()}")
 
