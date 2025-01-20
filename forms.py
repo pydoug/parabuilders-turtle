@@ -2,6 +2,7 @@ import streamlit as st
 import json
 import requests
 import os
+import base64
 from dotenv import load_dotenv
 
 # Carregar variáveis do arquivo .env
