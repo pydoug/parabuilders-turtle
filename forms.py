@@ -63,11 +63,11 @@ def main():
     twitter_handle = st.text_input("Twitter:", placeholder="Ex: @seuusuario")
     twitter_followers = st.text_input("Quantos seguidores você tem no Twitter?", placeholder="Digite o número")
     discord_handle = st.text_input("Discord:", placeholder="Ex: SeuUsuario#1234")
-    is_turtle_member = st.radio("Já participa do Discord da Turtle?", options=["Sim", "Não"])
+    is_turtle_member = st.radio("Já participa do Discord da ParaBuilders?", options=["Sim", "Não"])
     creator_role = None
     if is_turtle_member == "Sim":
         creator_role = st.radio(
-            "Você já possui cargo de creator na Turtle?",
+            "Você já possui cargo de creator na ParaBuilders?",
             options=["Sim, Creator Oficial", "Ainda não"]
         )
 
