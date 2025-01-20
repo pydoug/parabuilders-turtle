@@ -83,8 +83,8 @@ def main():
                 "Twitter": twitter_handle,
                 "Seguidores no Twitter": twitter_followers,
                 "Discord": discord_handle,
-                "Participa do Discord da Turtle": is_turtle_member,
-                "Cargo na Turtle": creator_role if is_turtle_member == "Sim" else "N/A",
+                "Participa do Discord da ParaBuilders": is_turtle_member,
+                "Cargo na ParaBuilders": creator_role if is_turtle_member == "Sim" else "N/A",
             }
             salvar_no_github("dados/formulario.json", data, "Atualização do formulário")
         else:
