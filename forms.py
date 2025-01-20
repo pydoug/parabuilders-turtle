@@ -10,7 +10,7 @@ load_dotenv()
 
 # Configurar o token do GitHub e o repositório
 github_token = os.getenv("GITHUB_TOKEN")
-github_repo = "pydoug/IA-ParaBuilders"  # Substitua pelo seu repositório no GitHub
+github_repo = "pydoug/parabuilders-turtle"  # Substitua pelo seu repositório no GitHub
 if not github_token:
     st.error("Token do GitHub não encontrado. Configure no arquivo .env.")
     st.stop()
