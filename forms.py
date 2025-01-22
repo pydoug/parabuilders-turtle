@@ -18,7 +18,7 @@ if not github_token:
 # Função para salvar dados no GitHub
 def salvar_no_github(file_path, new_data, commit_message):
     """
-    Salva novos dados em um arquivo JSON no repositório do GitHub, sem sobrescrever os existentes.
+    Adiciona novos dados a um arquivo JSON existente no repositório do GitHub.
     """
     url = f"https://api.github.com/repos/{github_repo}/contents/{file_path}"
     headers = {"Authorization": f"token {github_token}"}
@@ -26,19 +26,21 @@ def salvar_no_github(file_path, new_data, commit_message):
     # Verificar se o arquivo já existe no GitHub
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
+        # O arquivo existe: decodificar e carregar o conteúdo
         file_content = response.json().get("content", "")
         sha = response.json().get("sha")  # SHA do arquivo existente
-
-        # Decodificar e carregar o JSON existente
         existing_data = json.loads(base64.b64decode(file_content).decode("utf-8"))
-        if not isinstance(existing_data, list):
-            existing_data = []
     else:
-        # Se o arquivo não existir, criar um novo
+        # O arquivo não existe: criar uma nova lista
         existing_data = []
         sha = None
 
-    # Adicionar os novos dados ao conteúdo existente
+    # Certificar que `existing_data` é uma lista
+    if not isinstance(existing_data, list):
+        st.error("Erro: O conteúdo do arquivo existente não é uma lista válida.")
+        return
+
+    # Adicionar os novos dados à lista
     existing_data.append(new_data)
 
     # Codificar os dados atualizados em base64
@@ -53,9 +55,10 @@ def salvar_no_github(file_path, new_data, commit_message):
     # Enviar o arquivo atualizado para o GitHub
     response = requests.put(url, headers=headers, json=payload)
     if response.status_code in [200, 201]:
-        st.success(f"Arquivo {file_path} salvo com sucesso!")
+        st.success(f"Arquivo {file_path} atualizado com sucesso!")
     else:
-        st.error(f"Erro ao salvar {file_path}: {response.json()}")
+        st.error(f"Erro ao atualizar {file_path}: {response.json()}")
+
 
 # Função principal
 def main():
