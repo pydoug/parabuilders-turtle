@@ -16,9 +16,9 @@ if not github_token:
     st.stop()
 
 # Função para salvar dados no GitHub
-def salvar_no_github(file_path, data, commit_message):
+def salvar_no_github(file_path, new_data, commit_message):
     """
-    Salva um arquivo JSON no repositório do GitHub.
+    Salva novos dados em um arquivo JSON no repositório do GitHub, sem sobrescrever os existentes.
     """
     url = f"https://api.github.com/repos/{github_repo}/contents/{file_path}"
     headers = {"Authorization": f"token {github_token}"}
@@ -26,12 +26,23 @@ def salvar_no_github(file_path, data, commit_message):
     # Verificar se o arquivo já existe no GitHub
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
+        file_content = response.json().get("content", "")
         sha = response.json().get("sha")  # SHA do arquivo existente
+
+        # Decodificar e carregar o JSON existente
+        existing_data = json.loads(base64.b64decode(file_content).decode("utf-8"))
+        if not isinstance(existing_data, list):
+            existing_data = []
     else:
+        # Se o arquivo não existir, criar um novo
+        existing_data = []
         sha = None
 
-    # Codificar os dados em base64
-    content = json.dumps(data, ensure_ascii=False, indent=4).encode("utf-8")
+    # Adicionar os novos dados ao conteúdo existente
+    existing_data.append(new_data)
+
+    # Codificar os dados atualizados em base64
+    content = json.dumps(existing_data, ensure_ascii=False, indent=4).encode("utf-8")
     payload = {
         "message": commit_message,
         "content": base64.b64encode(content).decode("utf-8"),
@@ -39,7 +50,7 @@ def salvar_no_github(file_path, data, commit_message):
     if sha:
         payload["sha"] = sha
 
-    # Enviar o arquivo para o GitHub
+    # Enviar o arquivo atualizado para o GitHub
     response = requests.put(url, headers=headers, json=payload)
     if response.status_code in [200, 201]:
         st.success(f"Arquivo {file_path} salvo com sucesso!")
