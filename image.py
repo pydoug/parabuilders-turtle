@@ -29,7 +29,7 @@ st.markdown(
     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 20px;">
         <div style="display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap;">
             <img src="{parabuilders_logo_url}" alt="ParaBuilders Logo" style="height: 80px;"/>
-            <img src="{turtle_logo_url}" alt="TURTLE Logo" style="height: 190px;"/> <!-- Ajuste de tamanho -->
+            <img src="{turtle_logo_url}" alt="TURTLE Logo" style="height: 190px;"/>
         </div>
         <h1 style="text-align: center; font-size: 40px; margin-top: 10px;">
             Campaign ParaBuilders x TURTLE
@@ -72,16 +72,16 @@ def extract_datetime_from_filename(filename):
     Expected format: YYYYMMDD_HHMMSS_ranked_results.csv
     """
     try:
-        datetime_part = filename.split("_ranked_results")[0]  # Remove the suffix from the name
-        return pd.to_datetime(datetime_part, format="%Y%m%d_%H%M%S")  # Convert to datetime
+        datetime_part = filename.split("_ranked_results")[0]  # Remove o sufixo do nome
+        return pd.to_datetime(datetime_part, format="%Y%m%d_%H%M%S")
     except Exception as e:
         debug_print(f"[ERROR] Failed to extract datetime from filename '{filename}': {e}")
         return pd.NaT
 
 def ensure_engagement_total(df):
     """
-    Ensure that the 'Engagement_Total' column exists.
-    If not, calculate it using the formula:
+    Garante que a coluna 'Engagement_Total' exista.
+    Se não existir, calcula usando a fórmula:
     Engagement_Total = Views + (Comments x 6) + (Retweets x 3) + (Likes x 2) + (Bookmarks)
     """
     if 'Engagement_Total' not in df.columns:
@@ -99,8 +99,8 @@ def ensure_engagement_total(df):
 
 def load_latest_csv(directories):
     """
-    Load the latest CSV file from the given directories.
-    Returns the DataFrame and the filename.
+    Carrega o CSV mais recente com base no timestamp no nome do arquivo.
+    Retorna o DataFrame resultante e o nome do arquivo.
     """
     files = []
     for directory in directories:
@@ -114,11 +114,10 @@ def load_latest_csv(directories):
     if not files:
         raise FileNotFoundError("No CSV files found in the specified directories.")
 
-    # Seleciona o arquivo mais recente com base no timestamp do nome do arquivo
+    # Seleciona o arquivo mais recente
     latest_file = max(files, key=lambda f: extract_datetime_from_filename(os.path.basename(f)))
     debug_print(f"[DEBUG] Latest file selected: {latest_file}")
 
-    # Lê o arquivo e exibe informações básicas
     try:
         df = pd.read_csv(latest_file)
         debug_print(f"[DEBUG] File {latest_file} loaded successfully. Shape: {df.shape}")
@@ -130,13 +129,13 @@ def load_latest_csv(directories):
 
     # Garantir que 'Engagement_Total' exista
     df = ensure_engagement_total(df)
-    df["Datetime"] = extract_datetime_from_filename(os.path.basename(latest_file))  # Adiciona a coluna de datetime
+    df["Datetime"] = extract_datetime_from_filename(os.path.basename(latest_file))
     return df, latest_file
 
 def load_latest_and_second_latest_csv(directories):
     """
-    Load the latest and second latest CSV files from the given directories.
-    Returns two DataFrames and their filenames.
+    Carrega o CSV mais recente e o segundo mais recente.
+    Retorna dois DataFrames e os nomes dos arquivos.
     """
     files = []
     for directory in directories:
@@ -145,36 +144,40 @@ def load_latest_and_second_latest_csv(directories):
             continue
         dir_files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith(".csv")]
         files.extend(dir_files)
+
     if len(files) < 2:
         raise FileNotFoundError("Less than two CSV files found in the specified directories.")
+
+    # Ordena pelos timestamps decrescente
     sorted_files = sorted(files, key=lambda f: extract_datetime_from_filename(os.path.basename(f)), reverse=True)
     latest_file = sorted_files[0]
     second_latest_file = sorted_files[1]
+
     debug_print(f"[DEBUG] Loading latest CSV file: {latest_file}")
     debug_print(f"[DEBUG] Loading second latest CSV file: {second_latest_file}")
+
     latest_df = pd.read_csv(latest_file)
     latest_df = ensure_engagement_total(latest_df)
     latest_df["Datetime"] = extract_datetime_from_filename(os.path.basename(latest_file))
+
     second_latest_df = pd.read_csv(second_latest_file)
     second_latest_df = ensure_engagement_total(second_latest_df)
     second_latest_df["Datetime"] = extract_datetime_from_filename(os.path.basename(second_latest_file))
+
     return latest_df, second_latest_df, latest_file, second_latest_file
 
 def load_week_data(week):
     """
-    Load the data for a specific week based on the selected directory.
-    :param week: The selected week, e.g., 'Week1', 'Week2', etc.
-    :return: A pandas DataFrame com os dados para a semana selecionada.
+    Carrega os dados para a semana específica (Week1, Week2, etc.).
+    Retorna um DataFrame com os dados da semana selecionada.
     """
     try:
         debug_print(f"Selected week: {week}")
-
         directory = week_directories.get(week, None)
         debug_print(f"[DEBUG] Directory for {week}: {directory}")
 
         if not directory:
             raise FileNotFoundError(f"Directory for {week} not found.")
-
         if not os.path.isdir(directory):
             debug_print(f"[WARNING] Directory does not exist: {directory}")
             raise FileNotFoundError(f"Directory {directory} does not exist.")
@@ -189,7 +192,7 @@ def load_week_data(week):
         debug_print(f"[DEBUG] Latest file selected for {week}: {latest_file}")
 
         df = pd.read_csv(latest_file)
-        debug_print(f"[DEBUG] Dataframe loaded from {latest_file}. Shape: {df.shape}")
+        debug_print(f"[DEBUG] DataFrame loaded from {latest_file}. Shape: {df.shape}")
         debug_print(f"[DEBUG] File head:\n{df.head()}")
         debug_print(f"[DEBUG] File columns: {df.columns.tolist()}")
 
@@ -204,16 +207,16 @@ def load_week_data(week):
         st.error(f"Error loading data for {week}: {e}")
         return pd.DataFrame()
 
-# Verifique se a semana selecionada é válida e carregue os dados
+# Carrega dados com base na seleção do usuário
 if selected_week in ["Week1", "Week2", "Week3", "Week4"]:
-    week_data = load_week_data(selected_week)  # Apenas uma semana
+    week_data = load_week_data(selected_week)
 elif selected_week == "All Weeks":
     # Carrega dados de todas as semanas
     all_week_data = []
     for week, directory in week_directories.items():
         week_df = load_week_data(week)
         if not week_df.empty:
-            week_df["Week"] = week  # Marca a semana no DataFrame
+            week_df["Week"] = week
             all_week_data.append(week_df)
     week_data = pd.concat(all_week_data, ignore_index=True) if all_week_data else pd.DataFrame()
 else:
@@ -228,7 +231,7 @@ else:
 
 def sum_weekly_data(weekly_data):
     """
-    Concatenate all weekly DataFrames into a single DataFrame.
+    Concatena todos os DataFrames semanais em um único DataFrame.
     """
     if not weekly_data:
         raise ValueError("No weekly data to sum.")
@@ -240,8 +243,7 @@ def sum_weekly_data(weekly_data):
 
 def load_all_csv_files(directories):
     """
-    Load all CSV files from the given directories, append Datetime and Date columns.
-    Returns a combined DataFrame.
+    Carrega todos os CSVs em várias pastas, retornando um DataFrame combinado.
     """
     dataframes = []
     for directory in directories:
@@ -256,7 +258,7 @@ def load_all_csv_files(directories):
                     df = pd.read_csv(file_path)
                     df = ensure_engagement_total(df)
                     df["Datetime"] = extract_datetime_from_filename(file)
-                    df["Date"] = df["Datetime"].dt.strftime("%d/%m %H:%M")  # Format date as "23/11 23:54"
+                    df["Date"] = df["Datetime"].dt.strftime("%d/%m %H:%M")
                     dataframes.append(df)
                 except Exception as e:
                     debug_print(f"[ERROR] Failed to load {file_path}: {e}")
@@ -272,8 +274,7 @@ def load_all_csv_files(directories):
 
 def calculate_differences(latest_df, second_latest_df):
     """
-    Calculate absolute and percentage differences between latest and second latest DataFrames.
-    Returns a dictionary with differences for each metric.
+    Calcula as diferenças absolutas e percentuais entre o CSV mais recente e o segundo mais recente.
     """
     metrics = ["Likes", "Retweets", "Comments", "Bookmarks", "Views", "Engagement_Total"]
     differences = {}
@@ -290,18 +291,23 @@ def calculate_differences(latest_df, second_latest_df):
             "abs_diff": abs_diff,
             "perc_diff": perc_diff,
         }
-        debug_print(f"[DEBUG] Metric: {metric}, Latest: {latest_total}, Second Latest: {second_latest_total}, Diff: {abs_diff}, % Diff: {perc_diff}")
+        debug_print(
+            f"[DEBUG] Metric: {metric}, "
+            f"Latest: {latest_total}, "
+            f"Second Latest: {second_latest_total}, "
+            f"Diff: {abs_diff}, "
+            f"% Diff: {perc_diff}"
+        )
     return differences
 
 def display_summary_metrics(latest_df, second_latest_df, differences):
     """
-    Display summary metrics using Streamlit's metric components.
+    Exibe métricas de resumo usando os componentes 'metric' do Streamlit.
     """
     col1, col2, col3 = st.columns(3)
     col4, col5, col6 = st.columns(3)
-    col7, col8, col9 = st.columns(3)  # Added col9 for Unique Users
+    col7, col8, col9 = st.columns(3)  # col9 para Unique Users
 
-    # Function to format the number with commas and difference
     def format_metric(current, diff):
         return f"{current:,}", f"{diff:+,}"
 
@@ -354,12 +360,11 @@ def display_summary_metrics(latest_df, second_latest_df, differences):
 
 def display_full_ranking(df):
     """
-    Display the full ranking DataFrame.
+    Exibe o ranking completo em uma tabela.
     """
     st.header("Ranking")
-    # Reorder the columns in the specified order
     columns_order = ["User", "Engagement_Total", "Views", "Likes", "Retweets", "Comments", "Bookmarks", "Link"]
-    if all(col in df.columns for col in columns_order):  # Check if all columns exist in the DataFrame
+    if all(col in df.columns for col in columns_order):
         df_sorted = df[columns_order].sort_values(by="Engagement_Total", ascending=False).reset_index(drop=True)
         st.dataframe(df_sorted)
     else:
@@ -368,35 +373,29 @@ def display_full_ranking(df):
 
 def clean_dataframe(df):
     """
-    Clean the DataFrame by removing invalid columns, handling NaNs, and removing duplicates.
+    Limpa o DataFrame removendo colunas inválidas, NaNs e duplicados.
     """
     debug_print("\n[DEBUG] Cleaning DataFrame...")
 
-    # Remove extra columns like '<<<<<< HEAD' or columns with only whitespace
     invalid_cols = [col for col in df.columns if "HEAD" in col or col.isspace()]
     if invalid_cols:
         debug_print(f"[DEBUG] Removing invalid columns: {invalid_cols}")
         df = df.drop(columns=invalid_cols, errors="ignore")
 
-    # Identify critical columns dynamically based on the existing columns in the DataFrame
     critical_columns = [col for col in ["Date", "User", "Engagement_Total"] if col in df.columns]
     debug_print(f"[DEBUG] Valid critical columns for cleaning: {critical_columns}")
 
-    # Remove rows with NaN in critical columns
     if critical_columns:
         df = df.dropna(subset=critical_columns)
 
-    # Remove spaces and strange characters in all text columns
     for col in df.select_dtypes(include=["object"]).columns:
         df[col] = df[col].str.strip().str.replace(r"<<<<<<< HEAD", "", regex=True)
 
-    # Check for duplicates and remove them
     duplicated_rows = df.duplicated().sum()
     if duplicated_rows > 0:
         debug_print(f"[DEBUG] Removing {duplicated_rows} duplicated rows.")
         df = df.drop_duplicates()
 
-    # Extra debugging
     debug_print("[DEBUG] DataFrame after cleaning:")
     debug_print(df.head())
     debug_print(f"[DEBUG] Shape: {df.shape}")
@@ -408,52 +407,42 @@ def clean_dataframe(df):
 
 def plot_engagement_by_all_users_and_date(df, user_order=None):
     """
-    Plot engagement by all users over time, with the user legend sorted by ranking.
+    Plota o engajamento de todos os usuários ao longo do tempo,
+    com a legenda de usuários ordenada conforme ranking.
     """
-    # Clean and group the data
     df = clean_dataframe(df)
-    df["User"] = df["User"].str.strip().str.lower()  # Standardize usernames
+    df["User"] = df["User"].str.strip().str.lower()
 
-    # Ensure the Date column is in datetime format
     df["Datetime"] = pd.to_datetime(df["Date"], format="%d/%m %H:%M", errors="coerce")
-    df = df.dropna(subset=["Datetime"])  # Remove rows with invalid datetime
-    df = df.sort_values(by="Datetime")  # Sort by Datetime for proper plotting
+    df = df.dropna(subset=["Datetime"])
+    df = df.sort_values(by="Datetime")
 
-    # Group by Date and User
     grouped_df = df.groupby(["Datetime", "User"], as_index=False).agg({"Engagement_Total": "sum"})
-
-    # Pivot data for plotting
     pivot_df = grouped_df.pivot(index="Datetime", columns="User", values="Engagement_Total").fillna(0)
 
-    # Determine user order from the last CSV
     if user_order:
         sorted_users = user_order
     else:
-        # If no user_order provided, sort by total engagement
         ranking = (
             df.groupby("User")["Engagement_Total"]
             .sum()
             .sort_values(ascending=False)
         )
-        sorted_users = ranking.index.tolist()  # Full sorted user list
+        sorted_users = ranking.index.tolist()
 
-    # Reorder pivot_df columns to match user_order
     pivot_df = pivot_df[sorted_users]
 
-    # Create the plot
     fig = go.Figure()
-
     for idx, user in enumerate(sorted_users):
-        visibility = True if idx < 10 else "legendonly"  # Top 10 visible, others "legendonly"
+        visibility = True if idx < 10 else "legendonly"
         fig.add_trace(go.Scatter(
             x=pivot_df.index,
             y=pivot_df[user],
             mode="lines+markers",
-            name=user,  # Name in the legend
+            name=user,
             visible=visibility,
         ))
 
-    # Customize layout
     fig.update_layout(
         title="Engagement by User (Top 10 Initially, All Users in Legend)",
         xaxis_title="Date",
@@ -471,7 +460,7 @@ def plot_engagement_by_all_users_and_date(df, user_order=None):
 
 def plot_engagement_components_from_latest_csv(latest_df):
     """
-    Plot the components of engagement for the top 25 users.
+    Plota a composição do engajamento (Comments, Retweets, Likes, Bookmarks) para os 25 usuários no topo.
     """
     engagement_metrics = latest_df.groupby("User")[["Comments", "Retweets", "Likes", "Bookmarks"]].sum()
 
@@ -479,10 +468,9 @@ def plot_engagement_components_from_latest_csv(latest_df):
     filtered_metrics = engagement_metrics.loc[top_users]
 
     metrics = ["Comments", "Retweets", "Likes", "Bookmarks"]
-    colors = ["#636EFA", "#EF553B", "#00CC96", "#AB63FA"]  # Default Plotly colors
+    colors = ["#636EFA", "#EF553B", "#00CC96", "#AB63FA"]
 
     fig = go.Figure()
-
     for metric, color in zip(metrics, colors):
         fig.add_trace(go.Bar(
             x=filtered_metrics.index,
@@ -512,10 +500,13 @@ def plot_engagement_components_from_latest_csv(latest_df):
 
 def plot_engagement_total_by_rank(df):
     """
-    Plot total engagement by ranking order using a scatter plot.
+    Plota o total de engajamento (scatter) ordenado por ranking.
     """
-    sorted_df = df.groupby("User", as_index=False)["Engagement_Total"].sum().sort_values(by="Engagement_Total", ascending=False).reset_index(drop=True)
-    sorted_df["Rank"] = sorted_df.index + 1  # Add the Rank column (position)
+    sorted_df = df.groupby("User", as_index=False)["Engagement_Total"] \
+                  .sum() \
+                  .sort_values(by="Engagement_Total", ascending=False) \
+                  .reset_index(drop=True)
+    sorted_df["Rank"] = sorted_df.index + 1
 
     fig = px.scatter(
         sorted_df,
@@ -538,12 +529,11 @@ def plot_engagement_total_by_rank(df):
 
 def plot_likes_ranking(latest_df):
     """
-    Plot likes ranking for the top 25 users using a bar chart.
+    Plota um ranking de 'Likes' para os 25 usuários no topo.
     """
     likes_ranking = latest_df.groupby("User")["Likes"].sum().reset_index().sort_values(by="Likes", ascending=False).head(25)
 
     fig = go.Figure()
-
     fig.add_trace(go.Bar(
         x=likes_ranking["User"],
         y=likes_ranking["Likes"],
@@ -566,12 +556,11 @@ def plot_likes_ranking(latest_df):
 
 def plot_views_ranking(latest_df):
     """
-    Plot views ranking for the top 25 users using a bar chart.
+    Plota um ranking de 'Views' para os 25 usuários no topo.
     """
     views_ranking = latest_df.groupby("User")["Views"].sum().reset_index().sort_values(by="Views", ascending=False).head(25)
 
     fig = go.Figure()
-
     fig.add_trace(go.Bar(
         x=views_ranking["User"],
         y=views_ranking["Views"],
@@ -594,10 +583,9 @@ def plot_views_ranking(latest_df):
 
 def plot_engagement_total_by_date(directories):
     """
-    Plot total engagement by date using a line chart.
+    Plota o engajamento total por data, obtendo dados de todos os CSVs nos diretórios informados.
     """
     engagement_data = []
-
     for directory in directories:
         if not os.path.isdir(directory):
             debug_print(f"[WARNING] Directory not found: {directory}")
@@ -629,7 +617,6 @@ def plot_engagement_total_by_date(directories):
     debug_print(engagement_df.head())
 
     fig = go.Figure()
-
     fig.add_trace(go.Scatter(
         x=engagement_df["Date"],
         y=engagement_df["Total_Engagement"],
@@ -652,19 +639,15 @@ def plot_engagement_total_by_date(directories):
 
 def plot_top_post_by_user(df):
     """
-    Plot a bar chart showing the post with the highest engagement for each user.
+    Plota o post de maior engajamento para cada usuário (bar chart).
     """
     df = clean_dataframe(df)
-    df["User"] = df["User"].str.strip().str.lower()  # Standardize usernames
+    df["User"] = df["User"].str.strip().str.lower()
 
-    # Find the row with the maximum engagement for each user
     top_posts = df.loc[df.groupby("User")["Engagement_Total"].idxmax()]
-
-    # Sort users by engagement for visualization
     top_posts = top_posts.sort_values(by="Engagement_Total", ascending=False)
 
     fig = go.Figure()
-
     fig.add_trace(go.Bar(
         x=top_posts["User"],
         y=top_posts["Engagement_Total"],
@@ -685,16 +668,16 @@ def plot_top_post_by_user(df):
 
     st.plotly_chart(fig, use_container_width=True)
 
-# Main Execution Block
+# Bloco principal de execução
 try:
     if selected_week == 'All Weeks':
-        # Para exibir dados consolidados de todas as semanas
+        # Exibir dados consolidados
         latest_df = week_data
         second_latest_df = None
         differences = calculate_differences(latest_df, second_latest_df)
         timestamp = time.strftime("%d/%m/%Y %H:%M:%S")
     else:
-        # Load the latest and second latest CSV files for the selected week
+        # Carrega CSV mais recente e segundo mais recente para a semana selecionada
         latest_df, second_latest_df, latest_file, second_latest_file = load_latest_and_second_latest_csv(CSV_DIRS)
         differences = calculate_differences(latest_df, second_latest_df)
         timestamp = extract_datetime_from_filename(os.path.basename(latest_file)).strftime("%d/%m/%Y %H:%M:%S")
@@ -706,11 +689,11 @@ except Exception as e:
     st.error(f"An unexpected error occurred: {e}")
     st.stop()
 
-# For individual weeks, reload the latest_df to append week label properly
+# Para semanas individuais, recarrega o CSV mais recente
 if selected_week != 'All Weeks':
     try:
         latest_df, latest_file = load_latest_csv(CSV_DIRS)
-        latest_df["User"] = latest_df["User"].str.strip().str.lower()  # Remove spaces and convert to lowercase
+        latest_df["User"] = latest_df["User"].str.strip().str.lower()
         timestamp = extract_datetime_from_filename(os.path.basename(latest_file)).strftime("%d/%m/%Y %H:%M:%S")
     except Exception as e:
         st.error(f"Error loading latest CSV: {e}")
@@ -724,32 +707,28 @@ latest_ranking = (
     .index.tolist()
 )
 
-# Extract user order from the last CSV for legend ordering
 user_order = latest_df['User'].drop_duplicates().tolist()
 
-# Display the last update timestamp
 st.write(
     f"<p style='text-align: center; font-size: 12px;'><strong>LAST UPDATE:</strong> {timestamp}</p>",
     unsafe_allow_html=True
 )
 
-# Display summary metrics
+# Exibe métricas de resumo
 display_summary_metrics(latest_df, second_latest_df, differences)
 
-# Se a semana selecionada for "All Weeks", não mostrar os gráficos detalhados
+# Se selecionar "All Weeks", não mostra os gráficos detalhados
 if selected_week != 'All Weeks':
-    # Plot Engagement by Top 10 Users and Date
+    # Carrega todos os CSVs para plotar evolução
     all_data_df = load_all_csv_files(CSV_DIRS)
 
-    # Extract the top 10 users based on Engagement_Total
+    # Top 10 usuários por engajamento
     ranking = (
         latest_df.groupby("User")["Engagement_Total"]
         .sum()
         .sort_values(ascending=False)
     )
     top_10_users = ranking.head(10).index.tolist()
-
-    # Ensure usernames are standardized
     top_10_users = [user.strip().lower() for user in top_10_users]
 
     st.header("Engagement by User (Top 10)")
@@ -791,5 +770,5 @@ if selected_week != 'All Weeks':
     plot_top_post_by_user(latest_df)
     display_full_ranking(latest_df)
 
-# Display engagement formula
+# Fórmula do engajamento
 st.write("Total Engagement = Views + (Comments x 6) + (Retweets x 3) + (Likes x 2) + (Bookmarks).")
