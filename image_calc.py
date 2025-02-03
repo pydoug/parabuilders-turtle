@@ -183,7 +183,7 @@ st.sidebar.markdown(f"**Soma Total dos Pesos:** {total_pesos}")
 total_valor = st.sidebar.number_input(
     "Valor total (em dólares) a ser distribuído por semana:",
     min_value=0.0,
-    value=100.0,
+    value=150.0,
     step=10.0,
     format="%.2f"
 )
