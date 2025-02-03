@@ -111,7 +111,7 @@ def process_week(folder_name, min_engagement=500, weights=None):
 
 # --- STREAMLIT APP ---
 st.set_page_config(page_title="Distribuição de Recompensas", layout="wide")
-st.title("Distribuição de Recompensas STREAMFLOW")
+st.title("Distribuição de Recompensas TURTLE")
 
 st.markdown("""
 ## **Metodologia para Distribuição Dinâmica de Prêmios**
