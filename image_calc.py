@@ -145,7 +145,7 @@ st.sidebar.title("Configurações de Distribuição")
 min_engagement = st.sidebar.number_input(
     "Mínimo de Engagement_Total para considerar:",
     min_value=0,
-    value=500,
+    value=400,
     step=100
 )
 
