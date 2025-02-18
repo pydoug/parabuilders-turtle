@@ -30,20 +30,20 @@ def process_week(folder_name, min_engagement=500, weights=None):
     Processa os dados do último CSV encontrado na pasta informada.
     
     Para cada usuário, se houver mais de um post:
-    - Soma os valores de Engagement_Total.
-    - Agrupa as URLs (coluna Link) em uma única string (separadas por espaço).
-
+    - Considera apenas o post com maior valor de Engagement_Total.
+    - Agrupa a URL (coluna Link) do post selecionado.
+    
     Retorna três dicionários:
       - ranking_users: mapeia o usuário para a posição (ranking) considerando os que receberam peso.
       - user_percentages: mapeia o usuário para a porcentagem correspondente.
-      - aggregated_links: mapeia o usuário para a string com as URLs agregadas.
+      - aggregated_links: mapeia o usuário para a string com a URL.
     """
     latest_file = get_latest_file(folder_name)
     if not latest_file:
         return {}, {}, {}
 
     # Dicionário para acumular dados de cada usuário
-    # Estrutura: { user: {"engagement": valor_total, "links": [lista de urls]} }
+    # Estrutura: { user: {"engagement": valor, "links": [lista de urls]} }
     user_data = {}
 
     with open(latest_file, 'r', newline='', encoding='utf-8') as csvfile:
@@ -65,14 +65,13 @@ def process_week(folder_name, min_engagement=500, weights=None):
                 continue
 
             link = row.get(link_coluna, "").strip()
+            # Se o usuário já existir, guarda apenas o post com maior engajamento
             if user in user_data:
-                user_data[user]["engagement"] += engagement
-                if link:
-                    user_data[user]["links"].append(link)
+                if engagement > user_data[user]["engagement"]:
+                    user_data[user]["engagement"] = engagement
+                    user_data[user]["links"] = [link] if link else []
             else:
-                user_data[user] = {"engagement": engagement, "links": []}
-                if link:
-                    user_data[user]["links"].append(link)
+                user_data[user] = {"engagement": engagement, "links": [link] if link else []}
 
     if not user_data:
         return {}, {}, {}
@@ -97,7 +96,7 @@ def process_week(folder_name, min_engagement=500, weights=None):
         if weight == 0:
             continue
         user_weights[user] = weight
-        # Agrupa as URLs separando por espaço
+        # Agrupa as URLs separando por espaço (neste caso, será apenas uma URL)
         aggregated_links[user] = " ".join(data["links"])
 
     total_weights = sum(user_weights.values())
@@ -132,7 +131,7 @@ st.markdown("""
      Porcentagem da Posição = (Peso da Posição / Soma Total dos Pesos) × 100%
 
 3. **Agregação de Posts:**
-   - Se um usuário tiver mais de um post, o valor de Engagement_Total é somado e as URLs (coluna Link) são concatenadas, separadas por um espaço.
+   - Para cada usuário, é considerado apenas o post com maior Engagement_Total, e a URL desse post é utilizada.
 """)
 
 st.sidebar.title("Configurações de Distribuição")
@@ -197,7 +196,7 @@ if ranking_users:
     user_earnings = {}
     user_links = {}
 
-    week_name = "week1"  # Renomeado para week1, pois é a única semana em análise
+    week_name = "week1"  # Nome definido para a única semana em análise
     week_total_valor = total_valor
 
     for user, rank in sorted(ranking_users.items(), key=lambda x: x[1]):
