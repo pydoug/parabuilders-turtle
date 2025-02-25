@@ -316,30 +316,13 @@ folder = st.sidebar.selectbox("Selecione a pasta para buscar o CSV:", folder_opt
 # Aviso sobre o arquivo específico
 st.sidebar.info("Configurado para buscar preferencialmente o arquivo: 20250225_104457_ranked_results.csv")
 
-# Adiciona um botão para atualizar/processar dados
-if st.sidebar.button("Processar Dados", type="primary"):
-    # Tentar várias opções para encontrar o arquivo
-    st.subheader("Tentando encontrar arquivos CSV...")
-    
-    # Opção 1: Verificar se o arquivo específico pode ser acessado diretamente
-    try:
-        with open("csv_week2/20250225_104457_ranked_results.csv", "r") as test_file:
-            st.success("Arquivo encontrado via acesso direto!")
-            csv_file = "csv_week2/20250225_104457_ranked_results.csv"
-    except:
-        st.warning("Não foi possível acessar o arquivo diretamente, tentando outras opções...")
-        csv_file = None if not (use_uploaded and uploaded_file) else "temp_upload.csv"
-    
-    # Processar dados
-    ranking_users, user_percentages, aggregated_links = process_week(
-        folder_name=folder, 
-        min_engagement=min_engagement, 
-        weights=pesos_definidos, 
-        csv_file=csv_file
-    )
-else:
-    # Valor inicial ou quando o botão não foi pressionado
-    ranking_users, user_percentages, aggregated_links = {}, {}, {}
+# Processar dados
+ranking_users, user_percentages, aggregated_links = process_week(
+    folder_name=folder, 
+    min_engagement=min_engagement, 
+    weights=pesos_definidos, 
+    csv_file=csv_file if use_uploaded and uploaded_file else None
+)
 
 if ranking_users:
     st.subheader("Resumo da Distribuição")
