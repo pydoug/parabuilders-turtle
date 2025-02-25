@@ -6,15 +6,27 @@ import pandas as pd
 def get_csv_files(folder_path="."):
     """
     Retorna uma lista de arquivos CSV no diretório especificado.
-    Atualizado para buscar arquivos com _export.csv ou _ranked_results.csv
+    Busca especificamente o arquivo 20250225_104457_ranked_results.csv
     """
+    # Caminho específico para o arquivo mencionado no GitHub
+    specific_file = "20250225_104457_ranked_results.csv"
+    specific_path = os.path.join(folder_path, specific_file)
+    
+    # Verifique se este arquivo específico existe
+    if os.path.exists(specific_path):
+        st.success(f"Arquivo específico encontrado: {specific_file}")
+        return [specific_path]
+    
+    # Se não encontrar o arquivo específico, tenta buscar outros CSVs
     if not os.path.exists(folder_path):
+        st.error(f"Pasta não encontrada: {folder_path}")
         return []
     
     # Busca por arquivos CSV em geral, com preferência para _ranked_results.csv
     csv_files = [f for f in os.listdir(folder_path) if f.endswith(".csv")]
+    st.info(f"Arquivos CSV encontrados na pasta: {csv_files}")
     
-    # Primeiro tenta encontrar arquivos específicos de ranked_results
+    # Primeiro tenta encontrar arquivos ranked_results
     ranked_files = [f for f in csv_files if f.endswith("_ranked_results.csv")]
     
     # Se não encontrar, usa arquivos _export.csv
@@ -297,17 +309,37 @@ total_valor = st.sidebar.number_input(
     format="%.2f"
 )
 
-# Seleção de pasta
-folder_options = [".", "csv_week2"]
+# Seleção de pasta - definindo csv_week2 como padrão
+folder_options = ["csv_week2", "."]
 folder = st.sidebar.selectbox("Selecione a pasta para buscar o CSV:", folder_options, index=0)
 
-# Processar dados
-ranking_users, user_percentages, aggregated_links = process_week(
-    folder_name=folder, 
-    min_engagement=min_engagement, 
-    weights=pesos_definidos, 
-    csv_file=csv_file if use_uploaded and uploaded_file else None
-)
+# Aviso sobre o arquivo específico
+st.sidebar.info("Configurado para buscar preferencialmente o arquivo: 20250225_104457_ranked_results.csv")
+
+# Adiciona um botão para atualizar/processar dados
+if st.sidebar.button("Processar Dados", type="primary"):
+    # Tentar várias opções para encontrar o arquivo
+    st.subheader("Tentando encontrar arquivos CSV...")
+    
+    # Opção 1: Verificar se o arquivo específico pode ser acessado diretamente
+    try:
+        with open("csv_week2/20250225_104457_ranked_results.csv", "r") as test_file:
+            st.success("Arquivo encontrado via acesso direto!")
+            csv_file = "csv_week2/20250225_104457_ranked_results.csv"
+    except:
+        st.warning("Não foi possível acessar o arquivo diretamente, tentando outras opções...")
+        csv_file = None if not (use_uploaded and uploaded_file) else "temp_upload.csv"
+    
+    # Processar dados
+    ranking_users, user_percentages, aggregated_links = process_week(
+        folder_name=folder, 
+        min_engagement=min_engagement, 
+        weights=pesos_definidos, 
+        csv_file=csv_file
+    )
+else:
+    # Valor inicial ou quando o botão não foi pressionado
+    ranking_users, user_percentages, aggregated_links = {}, {}, {}
 
 if ranking_users:
     st.subheader("Resumo da Distribuição")
